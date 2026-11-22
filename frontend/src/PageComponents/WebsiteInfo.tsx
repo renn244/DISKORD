@@ -13,7 +13,7 @@ const WebsiteInfo = () => {
     const { user } = userAuthContext()
     // arrays all fake just for design
     const SocialMedias = {}; // made a mistake. fix later!
-    const Product = ["Download", "Nitro", "Status", "App Directory", "New Mobile Experience"];
+    const Product = ["Download", "Status", "App Directory", "New Mobile Experience"];
     const Company = ["About", "Jobs", "Brand", "Newsroom"];
     const Resources = ["College", "Support", "Safety", "Blog", "Feedback", "StreamKit", "Creators", "Community", "Developers", "Gaming"];
 

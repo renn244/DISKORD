@@ -90,6 +90,8 @@ router.get("/GetDirectMessage/:friendId", ensureAuthenticated, async (req, res) 
         const friendId = Number(req.params.friendId)
         const page = Number(req.query.page) || 1
 
+        if(!Number.isInteger(friendId)) return handleError(res, "User does not exist", 404)
+
         const getFriend = await pool.query(`
             SELECT u.id, u.name, u.username, COALESCE(ui.usericons, '') AS usericons,
             EXISTS (
