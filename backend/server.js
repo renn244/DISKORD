@@ -25,6 +25,7 @@ import authRoutes from './Routes/authRoutes.js'
 import serverRoutes from './Routes/serverRoutes.js'
 import userRoutes from './Routes/userRoutes.js'
 import messageRoutes from './Routes/messageRoutes.js'
+import friendRoutes from './Routes/friendRoutes.js'
 
 import connectPgSimple from 'connect-pg-simple'
 
@@ -65,6 +66,7 @@ app.use("/api/auth", authRoutes)
 app.use("/api/user", userRoutes)
 app.use("/api/server", serverRoutes)
 app.use("/api/message", messageRoutes)
+app.use("/api/friend", friendRoutes)
 
 server.listen(PORT, () => {
     console.log(`server is now running on PORT ${PORT}`)

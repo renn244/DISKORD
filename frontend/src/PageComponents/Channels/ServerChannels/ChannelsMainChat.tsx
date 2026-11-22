@@ -42,7 +42,7 @@ const ChannelsMainChat: React.FC<ChannelsMainChatType> = ({ channels, id }) => {
                     <Messages  channelId={channel.id} />
                 </div>
                 <div className='min-h-[68px] px-4'>
-                    <SendMessage channelId={channel.id} />
+                    <SendMessage url={`http://localhost:5000/api/message/AddMessage/${channel.id}`} />
                 </div>
             </div>
         </div>

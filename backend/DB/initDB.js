@@ -2,6 +2,7 @@ import { pool } from './db.js'
 import createServerLink from './ServerLink.js'
 import createServers from './Servers.js'
 import createSession from './Session.js'
+import createFriends from './Friends.js'
 
 const createTables = async () => {
     try {
@@ -34,7 +35,7 @@ const createTables = async () => {
 
         const createUserInfoTable = await pool.query(`
             CREATE TABLE IF NOT EXISTS userinfo (
-                user_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 usericons TEXT DEFAULT NULL,
                 bannercolor TEXT DEFAULT NULL,
                 aboutme VARCHAR(150) DEFAULT NULL,
@@ -49,7 +50,10 @@ const createTables = async () => {
     } 
 }
 
-createSession();
-createServers();
-createServerLink();
-createTables();
+// in order because servers and friends need the users table first
+await createSession();
+await createTables();
+await createServers();
+await createServerLink();
+await createFriends();
+await pool.end();
