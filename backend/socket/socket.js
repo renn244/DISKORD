@@ -31,6 +31,8 @@ io.on('connection', (socket) => {
     const userId = socket.handshake.query.userId // getting the userId through the first contact(handshake)
     if(userId !== undefined) userSocketMap[userId] = socket.id // adding the user to the userSocketMap with socked.id
 
+    io.emit('getOnlineUsers', Object.keys(userSocketMap))
+
     //ROOMS
     socket.on('JoinRoom', room => {
         // room name is base on channel id. all channel id is unique even though in different servers 
@@ -47,7 +49,9 @@ io.on('connection', (socket) => {
     // when user disconnect this will  be triggered
     socket.on('disconnect',  () => {
 
-        delete userSocketMap[userId]
+        // only remove if this is still the user's latest connection (refreshing makes a new one first)
+        if(userSocketMap[userId] === socket.id) delete userSocketMap[userId]
+        io.emit('getOnlineUsers', Object.keys(userSocketMap))
     })
 })
 

@@ -14,6 +14,7 @@ export const useSocketContext = () => {
 
 export const SocketProvider = ({ children }: PropsWithChildren) => {
     const [socket, setSocket] = useState<any>()
+    const [onlineUsers, setOnlineUsers] = useState<string[]>([])
     const { user }: any = userAuthContext()
 
     // the problem is that it always disconnect whenever it is restarted which is bad
@@ -30,6 +31,8 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
             setSocket(socket)
 
+            socket.on('getOnlineUsers', (users: string[]) => setOnlineUsers(users))
+
             return () => {
                 socket.close()
             }
@@ -37,7 +40,7 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     }, [user]) 
     
     return(
-        <SocketContext.Provider value={{socket}}>
+        <SocketContext.Provider value={{socket, onlineUsers}}>
             {children}
         </SocketContext.Provider>
     )
