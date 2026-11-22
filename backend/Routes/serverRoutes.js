@@ -225,6 +225,7 @@ router.post("/CreateChannel/:id", ensureAuthenticated, async (req, res) => {
         // only text channels for now. names are lowercase with dashes like new-channel
         const channelname = (req.body.channelname || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '')
 
+        if(!Number.isInteger(Number(id))) return handleError(res, "Server does not exist", 404)
         if(!channelname) return handleError(res, "Please type a channel name", 400)
         if(channelname.length > 40) return handleError(res, "Channel name must be 40 characters or less", 400)
 
