@@ -21,7 +21,10 @@ type TemplateType = {
 type HandleModalFunction = (number: number) => void;
 
 export interface ModalProps {
-    handleModalNumber: HandleModalFunction
+    handleModalNumber: HandleModalFunction,
+    template?: string,
+    audience?: 'friends' | 'community',
+    setAudience?: (audience: 'friends' | 'community') => void
 }
 
 const Template:TemplateType[] = [
@@ -34,6 +37,14 @@ const Template:TemplateType[] = [
 
 const AddServerModal = ({open, handleServerModalOpen}: any) => {
     const [modalNumber, setModalNumber] = useState<number>(1)
+    const [template, setTemplate] = useState<string | undefined>()
+    const [audience, setAudience] = useState<'friends' | 'community'>('friends')
+
+    // start from the first step every time it opens
+    useEffect(() => {
+        setModalNumber(1)
+        setTemplate(undefined)
+    }, [open])
 
     if(!open) return null
 
@@ -60,7 +71,7 @@ const AddServerModal = ({open, handleServerModalOpen}: any) => {
                         </button>
                     </div>
                     <div className='flex flex-col gap-2 mt-6 px-4 pb-2 max-h-[424px] overflow-auto custom-scrollbar'>
-                        <button onClick={() => handleModalNumber(3)}
+                        <button onClick={() => { setTemplate(undefined); handleModalNumber(3) }}
                         className='flex items-center border border-gray-500 rounded-lg hover:bg-slate-600'>   
                             <img src={MyOwnServer} className='ml-4 m-2' />
                             <h2 className='font-bold text-md text-white'>Create My Own</h2>
@@ -69,7 +80,7 @@ const AddServerModal = ({open, handleServerModalOpen}: any) => {
                         <div className='font-semibold text-[12px] text-slate-200 mt-4 mb-2'>START FROM A TEMPLATE</div>
                         {Template?.map((info, idx) => {
                             return(
-                                <button key={idx} 
+                                <button key={idx} onClick={() => { setTemplate(info.type); handleModalNumber(3) }}
                                 className='flex items-center border border-gray-500 rounded-lg w-[404px] hover:bg-slate-600'>   
                                     <img src={info.Logo} className='ml-4 m-2' />
                                     <h2 className='font-bold text-md text-white'>{info.type}</h2>
@@ -88,8 +99,8 @@ const AddServerModal = ({open, handleServerModalOpen}: any) => {
                     </div>
                 </div>}
                 {modalNumber === 2 && <JoinServer handleModalNumber={handleModalNumber} />}
-                {modalNumber === 3 && <CreateServer handleModalNumber={handleModalNumber} />}
-                {modalNumber === 4 && <CustomizeServer handleModalNumber={handleModalNumber} />}
+                {modalNumber === 3 && <CreateServer handleModalNumber={handleModalNumber} setAudience={setAudience} />}
+                {modalNumber === 4 && <CustomizeServer handleModalNumber={handleModalNumber} template={template} audience={audience} />}
             </div>
             
         </div>

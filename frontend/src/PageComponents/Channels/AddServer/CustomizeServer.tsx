@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { ModalProps } from './AddServerModal'
 import { IoCloudUploadOutline } from "react-icons/io5";
 
-const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber }) => {
+const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber, template, audience }) => {
     const [title, setTitle] = useState<string>("")
     const [selectedFile, setselectedFile] = useState()
     const [file, setFile] = useState()
     const [loading, setLoading] = useState<boolean>(false)
+    const [error, setError] = useState<string>("")
     const { user } = userAuthContext()
 
     useEffect(() => {
@@ -18,11 +19,14 @@ const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber }) => {
 
     const handleCreateServer = async (e: any) => {
         e.preventDefault()
+        if (!title.trim() || loading) return
         setLoading(true)
+        setError("")
         try {
-            if (!title) return
             const formdata = new FormData();
             formdata.append('title', title)
+            template && formdata.append('template', template)
+            audience && formdata.append('audience', audience)
             file && formdata.append('serverIcons', file) // did this because it errors without handling undefined but i want to make it optional
             const res: Response = await fetch('http://localhost:5000/api/server/createServer', {
                 method: 'POST',
@@ -34,10 +38,11 @@ const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber }) => {
 
             if(data.error) throw new Error(data.error)
             
-            // do not know what to put yet do later!!!
+            // full reload so the new server also shows up in the server list
             window.location.assign(`http://localhost:5173/channels/${data.serverId}/${data.channelId}`)
-        } catch (error) {
+        } catch (error: any) {
             console.log("error in the handleCreateServer: ", error)
+            setError(error.message)
         } finally {
             setLoading(false)
         }
@@ -50,6 +55,7 @@ const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber }) => {
                 <p className='text-slate-200 mt-1 text-center text-sm'>Give your new server a personality with a name and an icon.
                     You can always change it later.
                 </p>
+                {template && <p className='text-indigo-300 text-xs mt-1'>Using the {template} template</p>}
             </div>
             <div className='my-4 px-4 h-[200px]'>
                 <div className='pt-1 flex justify-center'>
@@ -74,14 +80,15 @@ const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber }) => {
                     <h2 className='font-semibold text-[12px] text-slate-200 mb-2'>SERVER NAME</h2>
                     <input 
                     value={title}
-                    onChange={(e:  React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+                    onChange={(e:  React.ChangeEvent<HTMLInputElement>) => { setTitle(e.target.value); setError("") }}
+                    maxLength={40}
                     type="text" 
                     className='p-[10px] bg-gray-800 w-full rounded-sm outline-none text-white' />
-                    <p className='text-xs text-slate-300 mt-2 pb-1'>By creating a server, you agree to Discord's
-                        <a href='https://discord.com/guidelines'
-                        className='text-xs text-blue-600 font-semibold hover:underline hover:underline-offset-1
-                        '> Community Guidelines.</a>
-                    </p>
+                    {error ?
+                        <p className='text-xs text-red-400 mt-2 pb-1'>{error}</p>
+                    :
+                        <p className='text-xs text-slate-300 mt-2 pb-1'>By creating a server, you agree to be nice to everyone in it.</p>
+                    }
 
                 </form>
             </div>
@@ -92,9 +99,9 @@ const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber }) => {
                     Back
                 </button>
                 
-                <button onClick={(e) => handleCreateServer(e)}
-                className='bg-indigo-500 text-white text-base rounded-md px-4 py-[2px] font-bold h-[38px]'>
-                    Create Server
+                <button onClick={(e) => handleCreateServer(e)} disabled={!title.trim() || loading}
+                className='bg-indigo-500 text-white text-base rounded-md px-4 py-[2px] font-bold h-[38px] disabled:opacity-50 disabled:cursor-not-allowed'>
+                    {loading ? 'Creating...' : 'Create Server'}
                 </button>
 
             </div>
