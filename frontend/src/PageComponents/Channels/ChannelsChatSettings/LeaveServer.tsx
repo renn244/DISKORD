@@ -1,15 +1,17 @@
+import { API_URL } from '@/util/apiUrl'
 import React from 'react'
 
 
 
-const LeaveServer: React.FC<{channelId: number}> = ({ channelId }) => {
+const LeaveServer: React.FC<{serverId: string | undefined}> = ({ serverId }) => {
 
     const handleLeaveServer = async () => {
         try {
-            if(!channelId) throw new Error("channel Id is undefined")
+            if(!serverId) throw new Error("server Id is undefined")
 
             const res: Response = 
-            await fetch(`http://localhost:5000/api/server/leave/${channelId}`, {
+            await fetch(`${API_URL}/api/server/leave/${serverId}`, {
+                method: 'POST',
                 credentials: 'include'
             })
             
@@ -17,7 +19,7 @@ const LeaveServer: React.FC<{channelId: number}> = ({ channelId }) => {
 
             if(data.error) throw new Error(data.error)
 
-            window.location.assign('http://localhost:5173/channels/@me/Friends')
+            window.location.assign('/channels/@me/Friends')
         } catch (error) {
             console.log(error)
         }

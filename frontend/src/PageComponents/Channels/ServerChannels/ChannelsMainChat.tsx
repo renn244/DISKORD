@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import React, { useEffect } from 'react'
 import { channelsType, serverinfo } from '../ChannelsChat'
 import { FaHashtag } from "react-icons/fa6";
@@ -37,12 +38,12 @@ const ChannelsMainChat: React.FC<ChannelsMainChatType> = ({ channels, id }) => {
                     {channel?.description}
                 </div>
             </div>
-            <div className='flex-1 max-w-[1591px] flex flex-col'>
-                <div className='flex-1 overflow-auto max-h-[803px]'>
+            <div className='flex-1 max-w-[1591px] flex flex-col min-h-0'>
+                <div className='flex-1 overflow-auto min-h-0 pb-4'>
                     <Messages  channelId={channel.id} />
                 </div>
                 <div className='min-h-[68px] px-4'>
-                    <SendMessage url={`http://localhost:5000/api/message/AddMessage/${channel.id}`} />
+                    <SendMessage url={`${API_URL}/api/message/AddMessage/${channel.id}`} />
                 </div>
             </div>
         </div>

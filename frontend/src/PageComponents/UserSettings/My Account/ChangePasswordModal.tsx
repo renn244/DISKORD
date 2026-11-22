@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { RxCross2 } from 'react-icons/rx'
 
@@ -32,7 +33,7 @@ const ChangePasswordModal = ({
         if(!input.password || !input.newPassword || !input.confirmNewPassword) return setMessage("Please fill in all the fields")
         if(input.newPassword !== input.confirmNewPassword) return setMessage("new password and confirm password is not the same")
         try {
-            const res: Response = await fetch("http://localhost:5000/api/user/changePassword", {
+            const res: Response = await fetch(`${API_URL}/api/user/changePassword`, {
                 method: 'POST',
                 headers: {
                     'Content-Type' : 'application/json'

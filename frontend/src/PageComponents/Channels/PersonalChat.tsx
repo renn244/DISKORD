@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 
 import { FaPlus } from "react-icons/fa";
 import Friends from "./PersonalChannel/Friends";
@@ -34,7 +35,7 @@ const PersonalChat = () => {
 
     const getConversations = async () => {
         try {
-            const res: Response = await fetch('http://localhost:5000/api/message/GetConversations', {
+            const res: Response = await fetch(`${API_URL}/api/message/GetConversations`, {
                 credentials: 'include'
             })
 

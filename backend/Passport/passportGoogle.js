@@ -28,9 +28,11 @@ passport.use(new GoogleStrategy({
         `, [profile.id])
         const user = userQuery.rows[0]
         if(!user) {
+            // RETURNING so the new account can log in right away (it was always empty before)
             const createUser = await pool.query(`
                 INSERT INTO users (name, username, auth_type, oauth_google_id)
                 VALUES ($1, $2, $3, $4)
+                RETURNING *;
             `, [profile?.displayName, profile?.displayName, 'Oauth', profile?.id])
 
             const newAccount = await createUser.rows[0]

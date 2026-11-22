@@ -22,7 +22,7 @@ const ChannelsChatSettings:React.FC<ChannelsChatSettings> = ({
                     Edit Server Profile
                 </button>
             </div>
-            <LeaveServer channelId={channelId} />
+            <LeaveServer serverId={serverId} />
         </div>
     </div>
   )

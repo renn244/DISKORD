@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RxCross2 } from 'react-icons/rx'
@@ -19,7 +20,7 @@ const NewMessageModal: React.FC<NewMessageModalType> = ({ open, onClose }) => {
         setSearch("")
         const getFriends = async () => {
             try {
-                const res: Response = await fetch('http://localhost:5000/api/friend/list', {
+                const res: Response = await fetch(`${API_URL}/api/friend/list`, {
                     credentials: 'include'
                 })
 

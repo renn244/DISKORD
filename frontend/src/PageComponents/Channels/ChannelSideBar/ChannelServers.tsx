@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { useEffect, useState } from 'react'
 import Direct_Message_Logo from '../../../assets/Direct_Message_Logo.svg'
 import { Link } from 'react-router-dom'
@@ -19,7 +20,7 @@ const ChannelServers = ({ handleServerModalOpen } : any) => {
     useEffect(() => {
         const GetAllServer = async () => {
             try {
-                const res: Response = await fetch("http://localhost:5000/api/server/GetAll_Servers", {
+                const res: Response = await fetch(`${API_URL}/api/server/GetAll_Servers`, {
                     method: 'POST',
                     headers: {
                         'Content-Type' : 'application/json'
