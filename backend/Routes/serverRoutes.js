@@ -17,39 +17,57 @@ const upload = multer({ storage: diskstorage('backend/uploads/serverIcons')})
 router.post("/createServer", ensureAuthenticated, upload.single('serverIcons'), async (req, res) => {
     const client = await pool.connect()
     try {
-        await client.query('BEGIN')
-
-        const { title } = req.body
+        const title = req.body.title?.trim()
+        const { template, audience } = req.body
         const user = req.user
         const file = req.file
         const serverIconsLink = file ? `http://localhost:5000/uploads/serverIcons/${file.filename}` : ''
 
-        const create_server = await pool.query(`
+        if(!title) return handleError(res, "Please give your server a name", 400)
+        if(title.length > 40) return handleError(res, "Server name must be 40 characters or less", 400)
+
+        // every server starts with General, the template and "for a club or community" add a few more
+        const channels = [...new Set([
+            "General",
+            ...({
+                "Gaming": ["clips-and-highlights", "looking-for-group"],
+                "Local Community": ["announcements", "events", "resources"],
+                "Study Group": ["homework-help", "session-planning", "resources"],
+                "School Club": ["announcements", "meeting-plans", "off-topic"],
+                "Friends": ["games", "music"],
+            }[template] || []),
+            ...(audience === 'community' ? ["announcements", "rules"] : []),
+        ])]
+
+        await client.query('BEGIN')
+
+        const create_server = await client.query(`
                 INSERT INTO Servers (title, HeaderPhoto, serverIcons, owner) 
                 VALUES ($1, $2, $3, $4)
                 RETURNING id;
         `, [title, '', serverIconsLink, user?.id])
+        const serverId = create_server.rows[0].id
 
-        const insertquery =  await pool.query(`
+        await client.query(`
             INSERT INTO Server_member (server_id, user_id) 
             VALUES ($1, $2);
-        `, [create_server.rows[0].id, user?.id])
+        `, [serverId, user?.id])
 
-        const inserGeneralChannel = await pool.query(`
+        const insertChannels = await client.query(`
             INSERT INTO channels (server_id, created_by, name)
-            VALUES ($1, $2, $3)
-            RETURNING id AS ChannelId;
-        `, [create_server.rows[0].id, user?.id, "General"])
+            SELECT $1, $2, name FROM unnest($3::text[]) WITH ORDINALITY AS c(name, position)
+            ORDER BY position
+            RETURNING id, name;
+        `, [serverId, user?.id, channels])
 
-        if(!create_server || !inserGeneralChannel) return handleError(res, "Failed to create a server", 400)
-        
         await client.query('COMMIT');
         res.status(200).json({
-            channelId: inserGeneralChannel.rows[0].channelid,
-            serverId: create_server.rows[0].id
+            channelId: insertChannels.rows.find(channel => channel.name === "General").id,
+            serverId: serverId
         })
     } catch (error) {
         console.log(error)
+        await client.query('ROLLBACK')
         handleError(res, "", 500, "error in the /createServer controller")
     } finally {
         client.release()
@@ -166,7 +184,8 @@ router.get("/GetServer/:serverId", ensureAuthenticated, async(req, res) => {
             FROM servers s
             LEFT JOIN Server_member sm ON s.id = sm.server_id AND sm.user_id = $1
             LEFT JOIN channels c ON s.id = c.server_id
-            WHERE s.id = $2;
+            WHERE s.id = $2
+            ORDER BY c.id;
         `, [userId, serverId])
         const result = getServer.rows[0]
 
@@ -201,9 +220,19 @@ router.get("/GetServer/:serverId", ensureAuthenticated, async(req, res) => {
 
 router.post("/CreateChannel/:id", ensureAuthenticated, async (req, res) => {
     try {
-        const { channeltype, channelname } = req.body // do later the types kase di pa nakalagay sa database
         const { id } = req.params
         const userid = req.user?.id
+        // only text channels for now. names are lowercase with dashes like new-channel
+        const channelname = (req.body.channelname || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '')
+
+        if(!Number.isInteger(Number(id))) return handleError(res, "Server does not exist", 404)
+        if(!channelname) return handleError(res, "Please type a channel name", 400)
+        if(channelname.length > 40) return handleError(res, "Channel name must be 40 characters or less", 400)
+
+        const isMember = await pool.query(`
+            SELECT 1 FROM server_member WHERE server_id = $1 AND user_id = $2;
+        `, [id, userid])
+        if(!isMember.rows[0]) return handleError(res, "You need to be in this server to create channels", 403)
 
         const createChannel = await pool.query(`
             INSERT INTO channels (server_id, created_by, name)
@@ -211,10 +240,7 @@ router.post("/CreateChannel/:id", ensureAuthenticated, async (req, res) => {
             RETURNING id;
         `, [id, userid, channelname])
 
-        const newChannelId = createChannel.rows[0].id;
-        if(!newChannelId) return handleError(res, "failed to create a server", 400)
-
-        res.status(200).json({ id: newChannelId})
+        res.status(200).json({ id: createChannel.rows[0].id })
     } catch (error) {
         console.log(error)
         handleError(res, "", 500, "/CreateChannel/:id")
