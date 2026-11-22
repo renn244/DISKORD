@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import React, { useEffect, useState } from 'react'
 
 const CopyLink:React.FC<{serverId: string | undefined}> = ({ serverId }) => {
@@ -17,7 +18,7 @@ const CopyLink:React.FC<{serverId: string | undefined}> = ({ serverId }) => {
         if(!serverId) return
         setLoading(true)
         try {
-            const res: Response = await fetch(`http://localhost:5000/api/server/CreateLink/${serverId}`,{
+            const res: Response = await fetch(`${API_URL}/api/server/CreateLink/${serverId}`,{
                 method: 'POST',
                 credentials: 'include'
             })

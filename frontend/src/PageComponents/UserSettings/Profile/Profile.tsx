@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { ChangeEvent, useEffect, useState } from 'react'
 import ChangeAvatar from './ChangeAvatar'
 import ChangeBannerColor from './ChangeBannerColor'
@@ -23,7 +24,7 @@ const Profile = () => {
   useEffect(() => {
     const handleGetProfile = async () => {
       try {
-        const res: Response = await fetch("http://localhost:5000/api/user/getProfile", {
+        const res: Response = await fetch(`${API_URL}/api/user/getProfile`, {
           method: 'GET',
           credentials: 'include'
         })
@@ -50,7 +51,7 @@ const Profile = () => {
       formData.append('bannercolor', profileInfo.bannercolor)
       formData.append('aboutme', profileInfo.aboutme)
 
-      const res: Response = await fetch("http://localhost:5000/api/user/editProfile", {
+      const res: Response = await fetch(`${API_URL}/api/user/editProfile`, {
         method: 'POST',
         body: formData,
         credentials: 'include'

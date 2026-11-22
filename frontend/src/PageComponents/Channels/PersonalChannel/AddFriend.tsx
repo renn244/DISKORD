@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import React, { useState } from 'react'
 
 const AddFriend: React.FC<{ onSent: () => void }> = ({ onSent }) => {
@@ -10,7 +11,7 @@ const AddFriend: React.FC<{ onSent: () => void }> = ({ onSent }) => {
         if(!username.trim()) return
         setLoading(true)
         try {
-            const res: Response = await fetch('http://localhost:5000/api/friend/request', {
+            const res: Response = await fetch(`${API_URL}/api/friend/request`, {
                 method: 'POST',
                 headers: {
                     'Content-Type' : 'application/json'

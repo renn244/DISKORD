@@ -34,9 +34,17 @@ router.post('/login',
 
 router.post('/signup', async (req, res) => {
     try {
-        const { username, password } = req.body
+        const { password } = req.body
+        const username = req.body.username?.trim()
 
         if(!username || !password) return handleError(res, "Please fill in all the fields", 400)
+        if(username.length > 40) return handleError(res, "Username must be 40 characters or less", 400)
+
+        // usernames have to be unique, friends are added by username
+        const usernameTaken = await pool.query(`
+            SELECT 1 FROM users WHERE username = $1;
+        `, [username])
+        if(usernameTaken.rows[0]) return handleError(res, "That username is already taken", 400)
         const encryptedpassword =  bcrypt.hashSync(password, 10);
         const hashpassword = encryptedpassword.trim()
 
@@ -55,7 +63,7 @@ router.post('/signup', async (req, res) => {
 })
 
 // logout for local auth and O auth
-router.get('/logout', (req, res) => {
+router.get('/logout', (req, res, next) => {
     req.logout((err) => {
         if(err) return next(err)
         res.status(200).json({ message : "Successfully logged out"})
@@ -72,7 +80,7 @@ router.get("/check", (req, res) => {
             auth_type: req.user.auth_type,
             name: req.user.name,
             id: req.user.id,
-            usericons: req.user?.usericons | null,
+            usericons: req.user?.usericons || null,
         }})
         // put other things later
     } else { 

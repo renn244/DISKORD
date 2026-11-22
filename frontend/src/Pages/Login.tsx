@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import GoogleAuth from '@/PageComponents/GoogleAuth'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -19,7 +20,7 @@ const Login = () => {
         try {
             if(!data.username || !data.password) return setMessage("please fill in the form")
 
-            const res: Response = await fetch('http://localhost:5000/api/auth/login', {
+            const res: Response = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type' : 'application/json'
@@ -32,7 +33,7 @@ const Login = () => {
 
             if (fetchdata?.error) throw new Error(fetchdata.error)
 
-            if (fetchdata.user) return window.location.assign('http://localhost:5173');
+            if (fetchdata.user) return window.location.assign('/');
         } catch (error: any) {
             setMessage("wrong useranme or password")
         }

@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { userAuthContext } from '@/Context/AuthContext'
 import { handleDragOver, handleDrop, handleFileChange } from '@/util/FileInput_utils'
 import { useEffect, useState } from 'react'
@@ -28,7 +29,7 @@ const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber, template, au
             template && formdata.append('template', template)
             audience && formdata.append('audience', audience)
             file && formdata.append('serverIcons', file) // did this because it errors without handling undefined but i want to make it optional
-            const res: Response = await fetch('http://localhost:5000/api/server/createServer', {
+            const res: Response = await fetch(`${API_URL}/api/server/createServer`, {
                 method: 'POST',
                 body: formdata,
                 credentials: 'include'
@@ -39,7 +40,7 @@ const CustomizeServer: React.FC<ModalProps> = ({ handleModalNumber, template, au
             if(data.error) throw new Error(data.error)
             
             // full reload so the new server also shows up in the server list
-            window.location.assign(`http://localhost:5173/channels/${data.serverId}/${data.channelId}`)
+            window.location.assign(`/channels/${data.serverId}/${data.channelId}`)
         } catch (error: any) {
             console.log("error in the handleCreateServer: ", error)
             setError(error.message)

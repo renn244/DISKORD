@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import React, { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { FaHashtag } from 'react-icons/fa6'
 
@@ -23,7 +24,7 @@ const AddChannelsModal: React.FC<AddChannelsModalType> = ({open, setOpenModal, i
         setLoading(true)
         setError("")
         try {
-            const res: Response = await fetch(`http://localhost:5000/api/server/CreateChannel/${id}`, {
+            const res: Response = await fetch(`${API_URL}/api/server/CreateChannel/${id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type' : 'application/json'
@@ -37,7 +38,7 @@ const AddChannelsModal: React.FC<AddChannelsModalType> = ({open, setOpenModal, i
             const data = await res.json()
 
             if(data.error) throw new Error(data.error)
-            window.location.assign(`http://localhost:5173/channels/${id}/${data.id}`)
+            window.location.assign(`/channels/${id}/${data.id}`)
         } catch (error: any) {
             console.log(error)
             setError(error.message)

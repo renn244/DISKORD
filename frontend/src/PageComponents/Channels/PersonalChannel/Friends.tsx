@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { useEffect, useState } from 'react'
 import FriendsMain from './FriendsMain'
 import { Me_logo } from '../PersonalChat'
@@ -17,7 +18,7 @@ const Friends = () => {
 
     const getFriends = async () => {
         try {
-            const res: Response = await fetch('http://localhost:5000/api/friend/list', {
+            const res: Response = await fetch(`${API_URL}/api/friend/list`, {
                 credentials: 'include'
             })
 
@@ -52,7 +53,7 @@ const Friends = () => {
     const doAction = async (action: string, friend: friendType) => {
         setConfirm(undefined)
         try {
-            const res: Response = await fetch(`http://localhost:5000/api/friend/${action}/${friend.id}`, {
+            const res: Response = await fetch(`${API_URL}/api/friend/${action}/${friend.id}`, {
                 method: 'POST',
                 credentials: 'include'
             })

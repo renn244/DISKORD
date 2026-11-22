@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import userIcons from '@/assets/UserIcons.svg'
 import { userAuthContext } from '@/Context/AuthContext'
@@ -31,7 +32,7 @@ const AccountProfile = ({ setCategory } : { setCategory: Dispatch<SetStateAction
     useEffect(() => {
         const handleGetProfileInfo = async () => {
             try {
-                const res: Response = await fetch('http://localhost:5000/api/user/getAccountProfile', {
+                const res: Response = await fetch(`${API_URL}/api/user/getAccountProfile`, {
                     method: 'GET',
                     credentials: 'include'
                 })
@@ -52,7 +53,7 @@ const AccountProfile = ({ setCategory } : { setCategory: Dispatch<SetStateAction
     const handleUsernameEdit = async (username: string, password: string): Promise<string> => {
         if(!username || !password) return "Please fill in the fields"
         try {
-            const res: Response = await fetch("http://localhost:5000/api/user/changeUsername", {
+            const res: Response = await fetch(`${API_URL}/api/user/changeUsername`, {
                 method: 'POST',
                 headers: {
                     'Content-Type' : 'application/json'
@@ -84,7 +85,7 @@ const AccountProfile = ({ setCategory } : { setCategory: Dispatch<SetStateAction
     const handleEmailEdit = async (email: string, password: string): Promise<string> => {
         if(!email || !password) return "Please fill in the fields"
         try {
-            const res: Response = await fetch("http://localhost:5000/api/user/changeEmail", {
+            const res: Response = await fetch(`${API_URL}/api/user/changeEmail`, {
                 method: 'POST',
                 headers: {
                     'Content-Type' : 'application/json'

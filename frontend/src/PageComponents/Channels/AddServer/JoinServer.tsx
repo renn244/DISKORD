@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { useState } from "react"
 import Arrow_Logo from '../../../assets/CreateServer_logo/Arrow_LOGO.svg'
 import Compass from '../../../assets/CreateServer_logo/Compass_LOGO.svg'
@@ -8,13 +9,11 @@ const JoinServer: React.FC<ModalProps> = ({handleModalNumber}) => {
     const [loading, setLoading] = useState<boolean>(false)
     const [notValid, setNotValid] = useState<boolean>(false)
 
-    // join server is not yet implmented so make sure to have a link save in the data base to be copied to.
-
     const handleJoinServer = async () => {
         setLoading(true)
 
         try {
-            const res:Response = await fetch(`http://localhost:5000/api/server/Join_Server`, {
+            const res:Response = await fetch(`${API_URL}/api/server/Join_Server`, {
                 method: 'POST',
                 headers: {
                     'Content-Type' : 'application/json'
@@ -27,15 +26,13 @@ const JoinServer: React.FC<ModalProps> = ({handleModalNumber}) => {
 
             if(data.error) throw new Error(data.error)
 
-            console.log(data) // might redirect to the main server that he joined in
-            window.location.assign(`http://localhost:5173/channels/${data}`) // still having problems with this
+            window.location.assign(`/channels/${data.serverId}/${data.channelId}`)
         } catch (error: any) {
             console.log(error)
             setNotValid(true)
         } finally {
             setLoading(false)
         }
-        // make a backend that will join him server in the 
     }
 
   return (
@@ -49,15 +46,15 @@ const JoinServer: React.FC<ModalProps> = ({handleModalNumber}) => {
                 <span className=' text-red-700'>{notValid ? " - The invite is invalid or has expired." : "*" }</span>
             </h2>
             <input value={serverLink}
-            onChange={(e:React.ChangeEvent<HTMLInputElement>) => setServerLink(e.target.value)}
+            onChange={(e:React.ChangeEvent<HTMLInputElement>) => { setServerLink(e.target.value); setNotValid(false) }}
+            onKeyDown={(e) => e.key === 'Enter' && serverLink && handleJoinServer()}
             className='p-[10px] bg-gray-800 w-full rounded-sm outline-none text-white'
-            type="text" placeholder='https://discord.gg/HelloWorld' />
+            type="text" placeholder='diskord/invite/3f9a1c2b7d4e5f60a1b2' />
         </div>
         <div className="pr-4 pl-4 mb-4">
             <h2 className='font-semibold text-[12px] text-slate-200 mb-2'>INVITE SHOULD LOOK LIKE</h2>
-            <div className="text-white text-sm">hElloWorld</div>
-            <div className="text-white text-sm">https://discord.gg/hTKzmak</div>   
-            <div className="text-white text-sm">https://discord.gg/cool-people</div>
+            <div className="text-white text-sm">diskord/invite/3f9a1c2b7d4e5f60a1b2</div>
+            <div className="text-white text-sm">3f9a1c2b7d4e5f60a1b2</div>
         </div>
         <div className="px-4">
             <div className='flex items-center border border-gray-500 rounded-lg hover:bg-slate-600 mb-4 px-4'>   
@@ -75,9 +72,9 @@ const JoinServer: React.FC<ModalProps> = ({handleModalNumber}) => {
                 Back
             </button>
             
-            <button disabled={loading}
+            <button disabled={loading || !serverLink.trim()}
             onClick={() => handleJoinServer()}
-            className='bg-indigo-500 text-white text-base rounded-md px-4 py-[2px] font-bold h-[38px]'>
+            className='bg-indigo-500 text-white text-base rounded-md px-4 py-[2px] font-bold h-[38px] disabled:opacity-50'>
                 Join Server
             </button>
         </div>

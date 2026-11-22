@@ -1,10 +1,11 @@
+import { API_URL } from '@/util/apiUrl'
 import { Button } from '@/components/ui/button'
 import React from 'react'
 
 const GoogleAuth = () => {
 
     const handleGoogleAuth = () => {
-        window.location.assign('http://localhost:5000/api/auth/google')
+        window.location.assign(`${API_URL}/api/auth/google`)
     }
 
     return (

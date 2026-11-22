@@ -38,7 +38,7 @@ app.use(session({
         pool: pool,
         tableName: 'session'
     }),
-    secret: 'keyboard cat', 
+    secret: process.env.SESSION_SECRET, 
     resave: true, 
     saveUninitialized: false,
     cookie: { maxAge: 30 * 24 * 60 * 60 * 1000} // 30 days formula
@@ -51,7 +51,7 @@ app.use(passport.session())
 
 app.use(express.json())
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: process.env.CLIENT_BASE_URL,
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: ['Content-Type', 'Authorization'],

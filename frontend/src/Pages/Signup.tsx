@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import GoogleAuth from '@/PageComponents/GoogleAuth'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -34,7 +35,7 @@ const Signup = () => {
     try {
       if(!data.username || !data.password || !data.confirmPassword) return setMessage("Please fill in all the fields")
       if(data.password !== data.confirmPassword) return setMessage("make sure the passwords are the same")
-      const res: Response = await fetch('http://localhost:5000/api/auth/signup', {
+      const res: Response = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type' : 'application/json'
@@ -47,7 +48,7 @@ const Signup = () => {
       if(fetchdata.error) throw new Error(fetchdata.error)
 
       // handle the logic or make a toast here
-      window.location.assign('http://localhost:5173/login');
+      window.location.assign('/login');
     } catch (error: any) {
       setMessage(error.message)
     }
