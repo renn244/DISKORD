@@ -1,28 +1,24 @@
-import lastelementofURL from '@/util/lastElementofURL';
 import { useLocalStorage } from '@/util/useLocalStorage';
 import React, { useEffect, useRef, useState } from 'react'
 import { FaCirclePlus } from "react-icons/fa6";
-import { useLocation } from 'react-router-dom';
-import Messages from './Messages';
 
+// url is where the message is posted, so this works for channels and direct messages
 type SendMesasgeType = {
-    channelId: number
+    url: string,
+    onSent?: (message: any) => void
 }
 
-const SendMessage: React.FC<SendMesasgeType> = ({ channelId }) => {
+const SendMessage: React.FC<SendMesasgeType> = ({ url, onSent }) => {
     const [message, setMessage] = useState<string | undefined>("")
     const contentEditableRef = useRef(null)
     //TODO LATER!! 
     // make sure to save the input like draft in discord or messenger 
     // and also detect if they change channel or not using useeffect
-    const URL = useLocation()
-    const selectedchannel = lastelementofURL(URL)
-    
-    const {  getItem, setItem, removeItem } = useLocalStorage<string>(`message/${selectedchannel}`)
+    const {  getItem, setItem, removeItem } = useLocalStorage<string>(`message/${url}`)
 
     useEffect(() => {
         setMessage(getItem())
-    }, [selectedchannel])
+    }, [url])
 
 
     const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
@@ -59,7 +55,7 @@ const SendMessage: React.FC<SendMesasgeType> = ({ channelId }) => {
     const handleSendMessage = async () => {
         if(!message) return
         try {
-            const res: Response = await fetch(`http://localhost:5000/api/message/AddMessage/${channelId}`, {
+            const res: Response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type' : 'application/json'
@@ -75,6 +71,7 @@ const SendMessage: React.FC<SendMesasgeType> = ({ channelId }) => {
             // you shoul be able to update messages
             removeItem()
             setMessage("")
+            onSent?.(data)
         } catch (error) {
             console.log(error)
         }
@@ -90,7 +87,7 @@ const SendMessage: React.FC<SendMesasgeType> = ({ channelId }) => {
                 onKeyDown={handleEnterKey}
                 suppressContentEditableWarning={true}
                 ref={contentEditableRef}
-                className='text-white border-none outline-none w-[1502px] 
+                className='text-white border-none outline-none flex-1 min-w-0 break-words 
                 cursor-text py-1'
                 onInput={handleInput}
                 contentEditable={"true"}

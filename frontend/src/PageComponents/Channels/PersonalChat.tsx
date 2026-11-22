@@ -5,9 +5,22 @@ import { Link, Route, Routes, useLocation } from "react-router-dom";
 import Store from "./PersonalChannel/Store";
 import Shop from "./PersonalChannel/Shop";
 import lastelementofURL from "@/util/lastElementofURL";
+import { useEffect, useState } from "react";
+import { useSocketContext } from "@/Context/SocketContext";
+import DirectChat from "./PersonalChannel/DirectChat";
+import NewMessageModal from "./PersonalChannel/NewMessageModal";
+import UserAvatar from "./PersonalChannel/UserAvatar";
+import UserArea from "../UserSettings/UserArea";
 
 interface logo_component {
     selected_cat?: boolean;
+}
+
+type conversationType = {
+    id: number,
+    name: string,
+    usericons: string,
+    last_message: string
 }
 
 const PersonalChat = () => {
@@ -19,6 +32,37 @@ const PersonalChat = () => {
 
     const URL = useLocation()
     const selected = lastelementofURL(URL)
+    const [conversations, setConversations] = useState<conversationType[]>([])
+    const [openNewMessage, setOpenNewMessage] = useState<boolean>(false)
+    const { socket, onlineUsers } = useSocketContext()
+
+    const getConversations = async () => {
+        try {
+            const res: Response = await fetch('http://localhost:5000/api/message/GetConversations', {
+                credentials: 'include'
+            })
+
+            const data = await res.json()
+
+            if(data.error) throw new Error(data.error)
+            setConversations(data)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    useEffect(() => {
+        getConversations()
+    }, [])
+
+    // a new message moves that conversation to the top (or adds it)
+    useEffect(() => {
+        if(!socket) return
+        socket.on('directMessage', getConversations)
+        return () => {
+            socket.off('directMessage', getConversations)
+        }
+    }, [socket])
 
     return (
         <div className='flex flex-row w-full h-screen h-full'>
@@ -26,17 +70,17 @@ const PersonalChat = () => {
             className='flex flex-col min-w-[240px] w-[240px] bg-gray-800'>
                 <nav className='relative flex flex-col flex-1'>
                     <div className='relative flex px-[10px] items-center justify-center h-[48px] border-b-[1px] border-gray-900'>
-                        <button 
+                        <button onClick={() => setOpenNewMessage(true)}
                         className='w-full bg-gray-900 px-[6px] py-[1px] h-[26px] rounded-md text-slate-400 text-sm text-start'>
                             Find or start a conversation
                         </button>
                     </div>
-                    <div className="flex flex-col items-center pr-2">
+                    <div className="flex flex-col items-center pr-2 flex-1 overflow-auto">
                         {Options?.map((info) => {
                             const selected_cat = selected === info.text
 
                             return (
-                                <Link to={'../@me/' + info.text} className='flex group w-full pl-2'>
+                                <Link key={info.text} to={'../@me/' + info.text} className='flex group w-full pl-2'>
                                     <div className={`flex items-center group-hover:bg-gray-700 rounded-md h-[42px] w-full cursor-pointer
                                          ${selected_cat && 'bg-gray-700'}`}>
                                         <div className='size-[32px] mr-3'>
@@ -56,17 +100,35 @@ const PersonalChat = () => {
                         <h2 className="pt-[18px] pl-[18px] pb-1 pr-2 text-start w-full uppercase 
                         text-slate-400 text-xs font-bold flex items-center">
                             <span className="hover:text-slate-300 flex-1">Direct Message</span>
-                            <div><FaPlus /></div>
+                            <button onClick={() => setOpenNewMessage(true)} aria-label="Create DM"
+                            className="hover:text-slate-300"><FaPlus /></button>
                         </h2>
 
-                        {/* implement a useeffect that gets friends that he can chat to and map it */}
+                        {conversations.map((conversation) => {
+                            const selected_dm = selected === conversation.id.toString()
+
+                            return (
+                                <Link key={conversation.id} to={'../@me/' + conversation.id} className='flex group w-full pl-2'>
+                                    <div className={`flex items-center gap-3 px-2 group-hover:bg-gray-700 rounded-md h-[42px] w-full
+                                        ${selected_dm && 'bg-gray-700'}`}>
+                                        <UserAvatar usericons={conversation.usericons} online={onlineUsers.includes(conversation.id.toString())} />
+                                        <h2 className={`group-hover:text-white font-semibold text-slate-400 truncate ${selected_dm && 'text-white'}`}>
+                                            {conversation.name}
+                                        </h2>
+                                    </div>
+                                </Link>
+                            )
+                        })}
                     </div>  
+                    <UserArea />
                 </nav>
             </div>
+            <NewMessageModal open={openNewMessage} onClose={() => setOpenNewMessage(false)} />
             <Routes>
                 <Route path={"Friends"} element={<Friends />}/>
                 <Route path={"Nitro"} element={<Store />}/>
                 <Route path={"Shop"} element={<Shop />}/>
+                <Route path={":friendId"} element={<DirectChat />}/>
             </Routes> 
         </div>
     )
