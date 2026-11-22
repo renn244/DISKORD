@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { io, Socket } from 'socket.io-client'
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 import { authType, userAuthContext } from './AuthContext';
@@ -23,7 +24,7 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     useEffect(() => {
         if(user) {
             
-            const socket:Socket = io('http://localhost:5000', {
+            const socket:Socket = io(API_URL, {
                 transports: ['websocket'],
                 query: { userId: user?.id} // this handshake is important because we are sending our id 
                 //so that it can connect socket id and user id that will be use to identify the two

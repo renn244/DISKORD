@@ -125,11 +125,18 @@ router.post('/changeUsername', ensureAuthenticated, async (req, res) => {
     try {
         const userId = req.user?.id
         const userpassword = req.user?.password
-        const { username, password } = req.body
-        console.log(req.user)
+        const { password } = req.body
+        const username = req.body.username?.trim()
+
+        if(!username) return handleError(res, "Please fill in a username", 400)
         // verifying the password using the password from the session and password sent
-        const verifypassword = bcrypt.compareSync(password, userpassword)
+        const verifypassword = bcrypt.compareSync(password || '', userpassword || '')
         if(!verifypassword) return handleError(res, "wrong password", 400)
+
+        const usernameTaken = await pool.query(`
+            SELECT 1 FROM users WHERE username = $1 AND id <> $2;
+        `, [username, userId])
+        if(usernameTaken.rows[0]) return handleError(res, "That username is already taken", 400)
 
         const changedUsername = await pool.query(`
             UPDATE users
@@ -161,21 +168,24 @@ router.post('/changeUsername', ensureAuthenticated, async (req, res) => {
 // set name // still not sure if thisis part of single update or as a whole
 router.post('/changeName', ensureAuthenticated, async (req, res) => {
     try {
-        const userId = res.user?.id
-        const { name } = req.body
+        const userId = req.user?.id
+        const name = req.body.name?.trim()
 
         if(!name) return handleError(res, "Please fill in the name", 400)
-        
+        if(name.length > 40) return handleError(res, "Name must be 40 characters or less", 400)
+
         const changeName = await pool.query(`
             UPDATE users
             SET name = $1
             WHERE id = $2
+            RETURNING id, name;
         `, [name, userId])
 
         if(!changeName.rows[0]) return handleError(res, "Failed to updated name", 400)
 
         res.status(200).json(changeName.rows[0])
     } catch (error) {
+        console.log(error)
         handleError(res, "", 500, '/changeName')
     }
 })
@@ -206,15 +216,20 @@ router.get('/getProfile', ensureAuthenticated, async (req, res) => {
     }
 })
 
-router.post('/editProfile', upload.single('userIcons') ,ensureAuthenticated, async (req, res) => {
+router.post('/editProfile', ensureAuthenticated, upload.single('userIcons'), async (req, res) => {
     const client = await pool.connect()
     try {
         const userId = req.user?.id
         const file = req.file
-        const { name, aboutme, bannercolor } = req.body
+        const { aboutme, bannercolor } = req.body
+        const name = req.body.name?.trim()
         const userIcons = req.body.userIcons
 
-        const userIconsLink = file ? 'http://localhost:5000/uploads/userIcons/' + file.filename : userIcons
+        if(!name) return handleError(res, "Please fill in the name", 400)
+        if(name.length > 40) return handleError(res, "Name must be 40 characters or less", 400)
+        if(aboutme?.length > 150) return handleError(res, "About me must be 150 characters or less", 400)
+
+        const userIconsLink = file ? `${process.env.SERVER_URL || 'http://localhost:5000'}/uploads/userIcons/${file.filename}` : userIcons
 
         // console.log(userIconsLink)
         // console.log(name)
@@ -224,26 +239,32 @@ router.post('/editProfile', upload.single('userIcons') ,ensureAuthenticated, asy
         // START OF THE pg TRANSACTION
         await client.query('BEGIN')
 
-        const updateNamequery = await pool.query(`
+        const updateNamequery = await client.query(`
             UPDATE users
             SET name = $1
             WHERE id = $2
             RETURNING name, id
         `, [name, userId])
 
-        const editProfilequery = await pool.query(`
-            UPDATE userinfo 
-            SET 
+        // new accounts don't have a userinfo row yet so this creates it the first time
+        const editProfilequery = await client.query(`
+            INSERT INTO userinfo (user_id, aboutme, bannercolor, usericons)
+            VALUES ($4, $1, $2, $3)
+            ON CONFLICT (user_id)
+            DO UPDATE SET
                 aboutme = $1,
                 bannercolor = $2,
                 usericons = $3
-                WHERE user_id = $4
             RETURNING aboutme, bannercolor,  usericons
         `, [aboutme, bannercolor, userIconsLink, userId])
 
         if(!editProfilequery.rows[0] || !updateNamequery.rows[0]) throw new Error("Failed to update Profile")
 
         await client.query('COMMIT')
+
+        // keep the session in sync so the new name shows without logging out
+        req.session.passport.user = { ...req.user, name: updateNamequery.rows[0].name, usericons: editProfilequery.rows[0].usericons }
+        req.session.save()
 
         res.status(200).json({
             aboutme: editProfilequery.rows[0].aboutme,

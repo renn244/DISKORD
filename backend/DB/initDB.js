@@ -44,6 +44,12 @@ const createTables = async () => {
             );
         `)
 
+        // older databases made userinfo point to servers by mistake, point it to users
+        await pool.query(`
+            ALTER TABLE userinfo DROP CONSTRAINT IF EXISTS userinfo_user_id_fkey;
+            ALTER TABLE userinfo ADD CONSTRAINT userinfo_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+        `)
+
         console.log("Successfully create The users table")
     } catch (error) {
         console.error('Error in creating the table. Error: ' +  error.message)

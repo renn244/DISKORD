@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { User } from "@/Context/AuthContext"
 import { useLocalStorage } from "./useLocalStorage"
 
@@ -6,7 +7,7 @@ export const handlegoogleauth = async() => {
     const { setItem } = useLocalStorage<User>('user')
 
     try {
-        const res: Response = await fetch('http://localhost:5000/api/auth/check', {
+        const res: Response = await fetch(`${API_URL}/api/auth/check`, {
             credentials: 'include'
         })
 
@@ -18,7 +19,7 @@ export const handlegoogleauth = async() => {
         // in app.tsx we set !user which is gonna be false and it's gonna refresh infinitely
         if(data.user === undefined) return
         setItem(data.user)
-        window.location.assign('http://localhost:5173');
+        window.location.assign('/');
     } catch (error) {
         console.log(error)
     }   

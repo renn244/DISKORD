@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { PropsWithChildren } from "react";
 import { MdLogout } from "react-icons/md";
 
@@ -12,14 +13,14 @@ const Logout: React.FC<LogoutTypes & React.HTMLAttributes<HTMLDivElement>> =
   
   const handleLogout = async () => {
     try {
-      const res: Response = await fetch("http://localhost:5000/api/auth/logout", {
+      const res: Response = await fetch(`${API_URL}/api/auth/logout`, {
         credentials: 'include'
       })
 
       const data = await res.json()
       if(data.error) throw new Error(data.error)
 
-      window.location.assign('http://localhost:5173')
+      window.location.assign('/')
     } catch (error) {
       console.log(error)
       console.log(" Error logging out")

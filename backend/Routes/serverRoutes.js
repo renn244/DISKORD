@@ -21,7 +21,7 @@ router.post("/createServer", ensureAuthenticated, upload.single('serverIcons'), 
         const { template, audience } = req.body
         const user = req.user
         const file = req.file
-        const serverIconsLink = file ? `http://localhost:5000/uploads/serverIcons/${file.filename}` : ''
+        const serverIconsLink = file ? `${process.env.SERVER_URL || 'http://localhost:5000'}/uploads/serverIcons/${file.filename}` : ''
 
         if(!title) return handleError(res, "Please give your server a name", 400)
         if(title.length > 40) return handleError(res, "Server name must be 40 characters or less", 400)
@@ -79,6 +79,14 @@ router.post("/CreateLink/:serverId", ensureAuthenticated, async(req, res) => {
         const { serverId } = req.params
         const userid = req.user?.id
 
+        if(!Number.isInteger(Number(serverId))) return handleError(res, "Server does not exist", 404)
+
+        // only members can make an invite
+        const isMember = await pool.query(`
+            SELECT 1 FROM server_member WHERE server_id = $1 AND user_id = $2;
+        `, [serverId, userid])
+        if(!isMember.rows[0]) return handleError(res, "You are not a member of this server", 403)
+
         // check wether there is a link already and send the res if exist
         const FindLink = await pool.query(`
             SELECT link 
@@ -108,19 +116,20 @@ router.post("/CreateLink/:serverId", ensureAuthenticated, async(req, res) => {
 
 router.post("/Join_Server", ensureAuthenticated, async (req, res) => {
     try {
-        const { serverlink } = req.body
         const userid = req.user?.id
+        // accepts the whole link or just the code at the end of it
+        const code = req.body.serverlink?.trim().split('/').pop()
 
-        if(!serverlink || !userid) return handleError(res, "failed to join", 400) 
+        if(!code || !userid) return handleError(res, "The invite is invalid or has expired", 400)
 
-        // first get the link of the server and if it verifies then add him using id 
+        // first get the link of the server and if it verifies then add him using id
         // and the server_id from the server link
         const findserver_link = await pool.query(`
             SELECT *
             FROM serverlinks
             WHERE link = $1
-        `, [serverlink])
-        if(!findserver_link.rows[0]) return handleError(res, "The invite in invalid or has expired") 
+        `, ['diskord/invite/' + code])
+        if(!findserver_link.rows[0]) return handleError(res, "The invite is invalid or has expired", 400) 
         
         const server_id = findserver_link.rows[0].server_id
 
@@ -132,14 +141,18 @@ router.post("/Join_Server", ensureAuthenticated, async (req, res) => {
 
         if(!verifyServer.rows[0]) return handleError(res, "Server does not exist", 400)
 
-        const insertquery = `
-            INSERT INTO server_member (server_id, user_id) 
-            VALUES ($1, $2);
-        `
-        console.log(server_id)
-        await pool.query(insertquery, [server_id, userid])
+        // joining a server you are already in just takes you there
+        await pool.query(`
+            INSERT INTO server_member (server_id, user_id)
+            VALUES ($1, $2)
+            ON CONFLICT DO NOTHING;
+        `, [server_id, userid])
 
-        res.status(200).json(34)
+        const firstChannel = await pool.query(`
+            SELECT id FROM channels WHERE server_id = $1 ORDER BY id LIMIT 1;
+        `, [server_id])
+
+        res.status(200).json({ serverId: server_id, channelId: firstChannel.rows[0]?.id })
     } catch (error) {
         console.log(error)
         handleError(res, "", 500, "Erron in the /Join_Server Controller")
@@ -149,7 +162,6 @@ router.post("/Join_Server", ensureAuthenticated, async (req, res) => {
 router.post("/GetAll_Servers", ensureAuthenticated, async (req, res) => {
     try {
         const userid = req.user.id
-        console.log(userid)
         const query = `
             SELECT s.id, s.title, s.ServerIcons
             FROM servers s
@@ -172,10 +184,12 @@ router.post("/GetAll_Servers", ensureAuthenticated, async (req, res) => {
 
 router.get("/GetServer/:serverId", ensureAuthenticated, async(req, res) => {
     try {
-        const { serverId } = req.params 
+        const { serverId } = req.params
         const userId = req.user?.id
 
-        const getServer = await pool.query(`
+        if(!Number.isInteger(Number(serverId))) return handleError(res, "Server Does not exist", 404)
+
+        const getServer= await pool.query(`
             SELECT s.id, s.title, s.owner, s.headerPhoto, s.serverIcons, 
                    CASE WHEN sm.user_id IS NOT NULL THEN true ELSE false END AS is_member,
                    c.id AS channel_id, 
@@ -189,7 +203,7 @@ router.get("/GetServer/:serverId", ensureAuthenticated, async(req, res) => {
         `, [userId, serverId])
         const result = getServer.rows[0]
 
-        if(result.length === 0) return handleError(res, "Server Does not exist", 400)
+        if(!result) return handleError(res, "Server Does not exist", 404)
 
         const serverDetails = {
             id: result.id,
@@ -247,24 +261,25 @@ router.post("/CreateChannel/:id", ensureAuthenticated, async (req, res) => {
     }
 })
 
-router.get("/leave/:channelId", ensureAuthenticated, async (req, res) => {
+router.post("/leave/:serverId", ensureAuthenticated, async (req, res) => {
     try {
-        const { channelId } = req.params
+        const { serverId } = req.params
         const userId = req.user?.id
-    
 
-        if(!channelId) return handleError(res, "channelId is not defined", 400)
-        
+        if(!Number.isInteger(Number(serverId))) return handleError(res, "Server does not exist", 404)
+
         const removeuser = await pool.query(`
             DELETE FROM server_member
-            WHERE server_id = $1 AND user_id = $2;
-        `, [channelId, userId])
+            WHERE server_id = $1 AND user_id = $2
+            RETURNING server_id;
+        `, [serverId, userId])
 
-        console.log(removeuser.rows[0])
-        res.status(200).json(removeuser)
-        // make sure to delete on server_members
+        if(!removeuser.rows[0]) return handleError(res, "You are not a member of this server", 404)
+
+        res.status(200).json({ message: "Left the server" })
     } catch (error) {
-        handleError(res, "", 500, "/leave/:channelId")
+        console.log(error)
+        handleError(res, "", 500, "/leave/:serverId")
     }
 })
 export default router

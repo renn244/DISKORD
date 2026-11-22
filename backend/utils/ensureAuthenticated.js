@@ -5,5 +5,6 @@ export const ensureAuthenticated = (req, res, next) => {
     return next()
   }
 
-  res.redirect(process.env.CLIENT_BASE_URL + "/login")
+  // every route using this is an api call, so tell the frontend instead of redirecting
+  res.status(401).json({ error: "Please log in first" })
 }

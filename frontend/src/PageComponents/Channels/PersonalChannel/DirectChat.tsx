@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { userAuthContext } from '@/Context/AuthContext'
@@ -31,7 +32,7 @@ const DirectChat = () => {
 
     const getMessages = async (pageNumber: number) => {
         try {
-            const res: Response = await fetch(`http://localhost:5000/api/message/GetDirectMessage/${friendId}?page=${pageNumber}`, {
+            const res: Response = await fetch(`${API_URL}/api/message/GetDirectMessage/${friendId}?page=${pageNumber}`, {
                 credentials: 'include'
             })
 
@@ -126,7 +127,7 @@ const DirectChat = () => {
                 </div>
                 <div className='min-h-[68px] px-4 shrink-0'>
                     {friend.is_friend ?
-                        <SendMessage url={`http://localhost:5000/api/message/AddDirectMessage/${friend.id}`} onSent={addMessage} />
+                        <SendMessage url={`${API_URL}/api/message/AddDirectMessage/${friend.id}`} onSent={addMessage} />
                     :
                         <div className='bg-lightgray rounded-md py-3 px-4 text-slate-400 text-sm'>
                             You can only message friends. Add {friend.name} as a friend to keep chatting.

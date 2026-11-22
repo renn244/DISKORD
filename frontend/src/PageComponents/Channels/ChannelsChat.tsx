@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import React, { useEffect, useState } from 'react'
 import { Link, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { MdKeyboardArrowDown } from "react-icons/md";
@@ -31,6 +32,7 @@ const ChannelsChat = () => {
   const [channelselected, setChannelSelected] = useState<number>(0)
   const [openSettings, setOpenSettings] = useState<boolean>(false)
   const [openModal, setOpenModal] = useState<boolean>(false)
+  const [notFound, setNotFound] = useState<boolean>(false)
   const { id } = useParams()
   
   const URL = useLocation()
@@ -38,8 +40,9 @@ const ChannelsChat = () => {
 
   useEffect(() => {
     const getserverinfo = async () => {
+      setNotFound(false)
       try {
-        const res: Response = await fetch(`http://localhost:5000/api/server/GetServer/${id}`, {
+        const res: Response = await fetch(`${API_URL}/api/server/GetServer/${id}`, {
           credentials: 'include'
         })
 
@@ -49,6 +52,7 @@ const ChannelsChat = () => {
         setServer(data)
       } catch (error) {
         console.log(error)
+        setNotFound(true)
       }
     }
     
@@ -60,7 +64,13 @@ const ChannelsChat = () => {
   const handleserverSetting = () => {
     setOpenSettings(prev => !prev)
   }
-  
+
+  if(notFound) return (
+    <div className='flex flex-1 h-screen justify-center items-center bg-darkgray'>
+      <h2 className='text-slate-300 text-xl font-semibold'>This server doesn't exist or you don't have access to it.</h2>
+    </div>
+  )
+
 
   return (
     <div className='flex flex-row h-screen w-full'>

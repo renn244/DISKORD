@@ -1,3 +1,4 @@
+import { API_URL } from '@/util/apiUrl'
 import { PropsWithChildren, createContext, useContext, useEffect, useState } from "react"
 
 // this is use for the type of the users
@@ -32,7 +33,7 @@ export default function AuthContextProvider({children}: PropsWithChildren) {
         const checkUser = async () => {
             setLoading(true)
             try {
-                const res: Response = await fetch('http://localhost:5000/api/auth/check', {
+                const res: Response = await fetch(`${API_URL}/api/auth/check`, {
                     credentials: 'include'
                 })
 

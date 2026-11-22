@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import { API_URL } from '@/util/apiUrl'
+import React, { useEffect, useRef, useState } from 'react'
 import Message from './Message'
 import { useSocketContext } from '@/Context/SocketContext'
 
@@ -18,7 +19,9 @@ export type messageType = {
 const Messages: React.FC<ComponentMessageType> = ({ channelId }) => {
   const [messages, setMessages] = useState<messageType []>([])
   const [page, setPage] = useState<number>(1)
-  const [previd, setPrevid] = useState<number>(0)
+  const [hasMore, setHasMore] = useState<boolean>(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollToBottom = useRef<boolean>(true)
 
   const { socket } =  useSocketContext()
 
@@ -27,55 +30,77 @@ const Messages: React.FC<ComponentMessageType> = ({ channelId }) => {
     if(!socket || !channelId) return
 
     const handleNewMessage = (message: messageType) => {
-      // Check if the message id is the same as the previous id
-      if (previd === message.id) return;
+      if(message.channel_id !== channelId) return
 
-      // Update state with the new message
-      setPrevid(message.id);
-      setMessages(prevmessages => [...prevmessages, message]);
+      // skip it if we already have it
+      scrollToBottom.current = true
+      setMessages(prevmessages => prevmessages.some(m => m.id === message.id) ? prevmessages : [...prevmessages, message]);
     };
 
     socket.on('message', handleNewMessage)
 
-    socket.emit('JoinRoom', channelId.toString()) 
+    socket.emit('JoinRoom', channelId.toString())
 
     return () => {
         socket.off('message', handleNewMessage);
         socket.emit('LeaveRoom', channelId.toString())
     };
-  }, [socket, channelId, previd])
+  }, [socket, channelId])
 
+
+  const getMessages = async (pageNumber: number) => {
+    try {
+      const res:Response = await fetch(`${API_URL}/api/message/GetMessage/${channelId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type' : 'application/json'
+        },
+        body: JSON.stringify({page: pageNumber}),
+        credentials: 'include'
+      })
+
+      const data = await res.json()
+
+      if(data.error) throw new Error(data.error)
+
+      setHasMore(data.hasMore)
+      setPage(pageNumber)
+      // older pages go on top
+      setMessages(prev => pageNumber === 1 ? data.messages : [...data.messages, ...prev])
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   useEffect(() => {
-    const getMessages = async () => {
-      try {
-        const res:Response = await fetch(`http://localhost:5000/api/message/GetMessage/${channelId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type' : 'application/json'
-          }, 
-          body: JSON.stringify({page: 1}),
-          credentials: 'include'
-        })
-        
-        const data = await res.json()
-
-        if(data.error) throw new Error(data.error)
-
-        setMessages(data)
-      } catch (error) {
-        console.log(error)
-      }
-    }
-
-    getMessages()
+    setMessages([])
+    scrollToBottom.current = true
+    getMessages(1)
   }, [channelId])
+
+  useEffect(() => {
+    if(scrollToBottom.current) bottomRef.current?.scrollIntoView()
+  }, [messages])
+
+  const handleLoadOlder = () => {
+    scrollToBottom.current = false
+    getMessages(page + 1)
+  }
 
   return (
     <div>
+      {hasMore &&
+        <div className='flex justify-center pt-4'>
+          <button onClick={handleLoadOlder}
+          className='text-sm text-slate-300 hover:text-white bg-highdarkgray px-3 py-1 rounded-md'>
+            Load older messages
+          </button>
+        </div>
+      }
       {messages?.map((message) => {
         return <Message key={message.id} message={message} />
       })}
+      <div ref={bottomRef} />
     </div>
   )
 }
