@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 const NavLinks = () => {
 
-    const navLinks = ["Download", "Nitro", "Discover", "Safety", "Blog"]
+    const navLinks = ["Download", "Discover", "Safety", "Blog"]
 
   return (
     <div className=' w-[600px]'>
